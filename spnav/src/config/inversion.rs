@@ -4,12 +4,18 @@
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct AxisInversion {
-    tx: bool,
-    ty: bool,
-    tz: bool,
-    rx: bool,
-    ry: bool,
-    rz: bool,
+    /// Translation X axis is inverted
+    pub tx: bool,
+    /// Translation Y axis is inverted
+    pub ty: bool,
+    /// Translation Z axis is inverted
+    pub tz: bool,
+    /// Rotation X axis is inverted
+    pub rx: bool,
+    /// Rotation Y axis is inverted
+    pub ry: bool,
+    /// Rotation Z axis is inverted
+    pub rz: bool,
 }
 
 impl AxisInversion {
@@ -92,37 +98,7 @@ impl AxisInversion {
         self
     }
 
-    // Query methods
-
-    /// Check if Translation X is inverted
-    pub fn tx(&self) -> bool {
-        self.tx
-    }
-
-    /// Check if Translation Y is inverted
-    pub fn ty(&self) -> bool {
-        self.ty
-    }
-
-    /// Check if Translation Z is inverted
-    pub fn tz(&self) -> bool {
-        self.tz
-    }
-
-    /// Check if Rotation X is inverted
-    pub fn rx(&self) -> bool {
-        self.rx
-    }
-
-    /// Check if Rotation Y is inverted
-    pub fn ry(&self) -> bool {
-        self.ry
-    }
-
-    /// Check if Rotation Z is inverted
-    pub fn rz(&self) -> bool {
-        self.rz
-    }
+    // Utility methods
 
     /// Invert all translation axes
     pub fn invert_translation(self) -> Self {
