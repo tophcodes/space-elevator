@@ -1,6 +1,6 @@
 // examples/button_actions.rs
 
-use spnav::{Event, SpaceNav, config::ButtonAction};
+use spnav::{config::ButtonAction, Event, SpaceNav};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut spacenav = SpaceNav::connect()?;

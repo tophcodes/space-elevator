@@ -1,8 +1,8 @@
 // examples/config.rs
 
 use spnav::{
-    SpaceNav,
     config::{DeviceAxis, InputAxis, LedState},
+    SpaceNav,
 };
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {

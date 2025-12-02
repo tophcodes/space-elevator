@@ -1,14 +1,16 @@
+pub mod config;
+mod error;
+mod event;
+#[cfg(feature = "lcd")]
+pub mod lcd;
+
+use config::Config;
+use error::{Error, Result};
+use event::{ButtonEvent, Event, MotionEvent};
+#[cfg(feature = "lcd")]
+use lcd::{Lcd, LcdError};
 use spnav_sys as ffi;
 use std::mem::MaybeUninit;
-
-mod error;
-pub use error::{Error, Result};
-
-mod event;
-pub use event::{ButtonEvent, Event, MotionEvent};
-
-pub mod config;
-pub use config::Config;
 
 /// Connection to the spacenavd daemon
 ///
@@ -35,7 +37,7 @@ impl SpaceNav {
     ///
     /// ```no_run
     /// use spnav::SpaceNav;
-    /// 
+    ///
     /// let mut device = SpaceNav::connect()?;
     /// # Ok::<(), spnav::Error>(())
     /// ```
@@ -60,6 +62,11 @@ impl SpaceNav {
         Config::new(self)
     }
 
+    #[cfg(feature = "lcd")]
+    pub fn lcd(&mut self) -> std::result::Result<Lcd, LcdError> {
+        Lcd::new()
+    }
+
     /// Wait for the next space mouse event (blocking)
     ///
     /// This function blocks until an event is available from the device.
@@ -73,9 +80,9 @@ impl SpaceNav {
     ///
     /// ```no_run
     /// use spnav::{SpaceNav, Event};
-    /// 
+    ///
     /// let mut device = SpaceNav::connect()?;
-    /// 
+    ///
     /// loop {
     ///     match device.wait_event()? {
     ///         Event::Motion(motion) => {
@@ -117,9 +124,9 @@ impl SpaceNav {
     ///
     /// ```no_run
     /// use spnav::{SpaceNav, Event};
-    /// 
+    ///
     /// let mut device = SpaceNav::connect()?;
-    /// 
+    ///
     /// loop {
     ///     if let Some(event) = device.poll_event()? {
     ///         match event {
@@ -165,10 +172,10 @@ impl SpaceNav {
     ///
     /// ```no_run
     /// use spnav::SpaceNav;
-    /// 
+    ///
     /// let device = SpaceNav::connect()?;
     /// let fd = device.file_descriptor();
-    /// 
+    ///
     /// // Use fd with select/poll/epoll...
     /// # Ok::<(), spnav::Error>(())
     /// ```

@@ -8,6 +8,7 @@ in {
   packages = with pkgs; [
     clang
     libspnav-sans-x11
+    systemd # contains libudev, which is required for hidapi
   ];
 
   languages = {

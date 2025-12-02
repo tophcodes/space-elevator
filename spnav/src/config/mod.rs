@@ -76,13 +76,12 @@ impl<'a> Config<'a> {
 
     /// Get current deadzone threshold for an axis
     pub fn get_deadzone(&self, axis: DeviceAxis) -> Result<i32> {
-        unsafe {
-            let value = ffi::spnav_cfg_get_deadzone(axis as i32);
-            if value == -1 {
-                return Err(Error::ConfigFailed);
-            }
-            Ok(value)
+        let value = unsafe { ffi::spnav_cfg_get_deadzone(axis as i32) };
+        if value == -1 {
+            return Err(Error::ConfigFailed);
         }
+
+        Ok(value)
     }
 
     /// Get all deadzone thresholds as an array [TX, TY, TZ, RX, RY, RZ]
@@ -127,18 +126,18 @@ impl<'a> Config<'a> {
                 return Err(Error::ConfigFailed);
             }
         }
+
         Ok(())
     }
 
     /// Get global sensitivity multiplier
     pub fn get_global_sensitivity(&self) -> Result<f32> {
-        unsafe {
-            let value = ffi::spnav_cfg_get_sens();
-            if value < 0.0 {
-                return Err(Error::ConfigFailed);
-            }
-            Ok(value)
+        let value = unsafe { ffi::spnav_cfg_get_sens() };
+        if value < 0.0 {
+            return Err(Error::ConfigFailed);
         }
+
+        Ok(value)
     }
 
     /// Set per-axis sensitivity multipliers for all 6 input axes
@@ -168,6 +167,7 @@ impl<'a> Config<'a> {
                 return Err(Error::ConfigFailed);
             }
         }
+
         Ok(())
     }
 
@@ -181,6 +181,7 @@ impl<'a> Config<'a> {
                 return Err(Error::ConfigFailed);
             }
         }
+
         Ok(sensitivities)
     }
 
@@ -278,18 +279,18 @@ impl<'a> Config<'a> {
                 return Err(Error::ConfigFailed);
             }
         }
+
         Ok(())
     }
 
     /// Get current axis inversion bitmask
     pub fn get_invert_raw(&self) -> Result<u32> {
-        unsafe {
-            let value = ffi::spnav_cfg_get_invert();
-            if value == -1 {
-                return Err(Error::ConfigFailed);
-            }
-            Ok(value as u32)
+        let value = unsafe { ffi::spnav_cfg_get_invert() };
+        if value == -1 {
+            return Err(Error::ConfigFailed);
         }
+
+        Ok(value as u32)
     }
 
     /// Set axis inversions using a builder
@@ -320,13 +321,12 @@ impl<'a> Config<'a> {
 
     /// Get the current input button mapping for a device button
     pub fn get_button_map(&self, device_button: u32) -> Result<u32> {
-        unsafe {
-            let value = ffi::spnav_cfg_get_bnmap(device_button as i32);
-            if value == -1 {
-                return Err(Error::ConfigFailed);
-            }
-            Ok(value as u32)
+        let value = unsafe { ffi::spnav_cfg_get_bnmap(device_button as i32) };
+        if value == -1 {
+            return Err(Error::ConfigFailed);
         }
+
+        Ok(value as u32)
     }
 
     /// Set LED state
@@ -341,13 +341,12 @@ impl<'a> Config<'a> {
 
     /// Get current LED state
     pub fn get_led(&self) -> Result<LedState> {
-        unsafe {
-            let value = ffi::spnav_cfg_get_led();
-            if value == -1 {
-                return Err(Error::ConfigFailed);
-            }
-            Ok(LedState::from(value))
+        let value = unsafe { ffi::spnav_cfg_get_led() };
+        if value == -1 {
+            return Err(Error::ConfigFailed);
         }
+
+        Ok(LedState::from(value))
     }
 
     /// Set event grab mode
@@ -364,13 +363,12 @@ impl<'a> Config<'a> {
 
     /// Get current grab mode
     pub fn get_grab(&self) -> Result<GrabMode> {
-        unsafe {
-            let value = ffi::spnav_cfg_get_grab();
-            if value == -1 {
-                return Err(Error::ConfigFailed);
-            }
-            Ok(GrabMode::from(value))
+        let value = unsafe { ffi::spnav_cfg_get_grab() };
+        if value == -1 {
+            return Err(Error::ConfigFailed);
         }
+
+        Ok(GrabMode::from(value))
     }
 
     /// Enable or disable swapping of Y and Z axes
@@ -397,6 +395,7 @@ impl<'a> Config<'a> {
                 return Err(Error::ConfigFailed);
             }
         }
+
         Ok(())
     }
 
@@ -408,13 +407,10 @@ impl<'a> Config<'a> {
     /// * `Ok(false)` - Y and Z axes are normal
     /// * `Err(_)` - Query failed
     pub fn get_swap_yz(&self) -> Result<bool> {
-        unsafe {
-            let value = ffi::spnav_cfg_get_swapyz();
-            match value {
-                -1 => Err(Error::ConfigFailed),
-                0 => Ok(false),
-                _ => Ok(true),
-            }
+        match unsafe { ffi::spnav_cfg_get_swapyz() } {
+            -1 => Err(Error::ConfigFailed),
+            0 => Ok(false),
+            _ => Ok(true),
         }
     }
 
@@ -428,6 +424,7 @@ impl<'a> Config<'a> {
                 return Err(Error::ConfigFailed);
             }
         }
+
         Ok(())
     }
 
@@ -491,13 +488,12 @@ impl<'a> Config<'a> {
     ///
     /// The action mapped to this button, or an error if the query failed.
     pub fn get_button_action(&self, button: u32) -> Result<ButtonAction> {
-        unsafe {
-            let value = ffi::spnav_cfg_get_bnaction(button as i32);
-            if value == -1 {
-                return Err(Error::ConfigFailed);
-            }
-            ButtonAction::from_raw(value).ok_or(Error::UnknownButtonAction(value))
+        let value = unsafe { ffi::spnav_cfg_get_bnaction(button as i32) };
+        if value == -1 {
+            return Err(Error::ConfigFailed);
         }
+
+        ButtonAction::from_raw(value).ok_or(Error::UnknownButtonAction(value))
     }
 
     /// Clear button action mapping (return to regular button)
@@ -567,6 +563,7 @@ impl<'a> Config<'a> {
         for (button, action) in mappings {
             self.set_button_action(button, action)?;
         }
+
         Ok(())
     }
 
@@ -591,6 +588,7 @@ impl<'a> Config<'a> {
                 return Err(Error::ConfigFailed);
             }
         }
+
         Ok(())
     }
 
@@ -603,6 +601,7 @@ impl<'a> Config<'a> {
                 return Err(Error::ConfigFailed);
             }
         }
+
         Ok(())
     }
 
@@ -613,6 +612,7 @@ impl<'a> Config<'a> {
                 return Err(Error::ConfigFailed);
             }
         }
+
         Ok(())
     }
 }
