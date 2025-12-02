@@ -1,0 +1,20 @@
+[package]
+name = "spnav"
+version = "0.1.0"
+edition = "2021"
+authors = ["Christopher Mühl <christopher@muehl.dev>"]
+description = "Safe Rust bindings for libspnav (SpaceNavigator 3D mouse support)"
+repository = "https://github.com/padarom/space-elevator"
+license = "MIT OR Apache-2.0"
+keywords = ["spacemouse", "3d", "input", "hid", "spnav"]
+categories = ["hardware-support", "api-bindings"]
+readme = "README.md"
+
+[dependencies]
+spnav-sys = { version = "0.1", path = "../spnav-sys" }
+thiserror = "1.0"
+serde = { version = "1.0", features = ["derive"], optional = true }
+
+[features]
+default = []
+serde = ["dep:serde"]
