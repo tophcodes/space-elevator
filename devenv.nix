@@ -10,7 +10,6 @@ in {
     libspnav-sans-x11
   ];
 
-  # https://devenv.sh/languages/
   languages = {
     rust.enable = true;
 
