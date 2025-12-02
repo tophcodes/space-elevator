@@ -13,6 +13,7 @@ dist
 dist-ssr
 *.local
 .devenv
+.devenv.flake.nix
 
 # Editor directories and files
 .vscode/*
