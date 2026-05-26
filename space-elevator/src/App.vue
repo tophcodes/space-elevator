@@ -13,7 +13,7 @@ async function greet() {
 
 <template>
   <main class="container">
-    <h1>Welcome to Tauri + Vue</h1>
+    <h1>Welcome to Tauri + Vue, my master</h1>
 
     <div class="row">
       <a href="https://vite.dev" target="_blank">

@@ -6,9 +6,17 @@ in {
   env.LIBCLANG_PATH = "${pkgs.libclang.lib}/lib";
 
   packages = with pkgs; [
+    # spnav-sys
     clang
     libspnav-sans-x11
+
+    # spnav
     systemd # contains libudev, which is required for hidapi
+
+    # space-elevator (src-tauri)
+    glib
+    libsoup_3 # TODO: Is this always needed?
+    webkitgtk_4_1
   ];
 
   languages = {
