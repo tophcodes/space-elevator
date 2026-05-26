@@ -15,6 +15,7 @@ class SpaceElevatorWorkbench(Gui.Workbench):
         FreeCAD.Console.PrintMessage("Space Elevator: workbench initialized\n")
         from space_elevator import preferences
         preferences.register()
+        self.appendMenu("Space Elevator", ["SpaceElevator_ButtonBindings"])
 
     def Activated(self):
         from space_elevator import lifecycle
@@ -29,3 +30,18 @@ class SpaceElevatorWorkbench(Gui.Workbench):
 
 
 Gui.addWorkbench(SpaceElevatorWorkbench())
+
+
+class _ButtonBindingsCmd:
+    def GetResources(self):
+        return {"MenuText": "Button bindings…", "ToolTip": "Bind SpaceMouse buttons to FreeCAD commands"}
+
+    def Activated(self):
+        from space_elevator.button_dialog import show
+        show()
+
+    def IsActive(self):
+        return True
+
+
+Gui.addCommand("SpaceElevator_ButtonBindings", _ButtonBindingsCmd())
