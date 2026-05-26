@@ -77,9 +77,13 @@ async fn dispatch(req: Request, lcd: &LcdHandle) -> Response {
             },
             Err(e) => Response::err(req.id, e),
         },
-        RequestPayload::LcdDisplaySvg { .. } => {
-            Response::err(req.id, "svg not implemented yet")
-        }
+        RequestPayload::LcdDisplaySvg { svg } => match crate::svg_render::render_to_rgb888(&svg) {
+            Ok(rgb) => match lcd.display_rgb888(&rgb).await {
+                Ok(()) => Response::ok(req.id),
+                Err(e) => Response::err(req.id, e.to_string()),
+            },
+            Err(e) => Response::err(req.id, e),
+        },
     }
 }
 
