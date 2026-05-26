@@ -13,6 +13,8 @@ class SpaceElevatorWorkbench(Gui.Workbench):
 
     def Initialize(self):
         FreeCAD.Console.PrintMessage("Space Elevator: workbench initialized\n")
+        from space_elevator import preferences
+        preferences.register()
 
     def Activated(self):
         from space_elevator import lifecycle
