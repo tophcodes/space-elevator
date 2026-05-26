@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<package format="1" xmlns="https://wiki.freecad.org/Package_Metadata">
+  <name>Space Elevator</name>
+  <description>6DOF input device integration for FreeCAD (SpaceMouse, etc.)</description>
+  <version>0.1.0</version>
+  <maintainer email="christopher@muehl.dev">Christopher Mühl</maintainer>
+  <license file="LICENSE">MIT</license>
+  <url type="repository" branch="main">https://github.com/padarom/space-elevator</url>
+  <content>
+    <workbench>
+      <classname>SpaceElevatorWorkbench</classname>
+      <name>Space Elevator</name>
+      <description>Integration for 6DOF input devices.</description>
+      <icon>Resources/icons/space-elevator.svg</icon>
+    </workbench>
+  </content>
+  <depend condition="$installed_FreeCAD &gt; '1.0'">FreeCAD</depend>
+</package>
