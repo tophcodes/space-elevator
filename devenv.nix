@@ -10,22 +10,16 @@ in {
     clang
     libspnav-sans-x11
 
-    # spnav
+    # spnav + space-elevatord
     systemd # contains libudev, which is required for hidapi
 
-    # space-elevator (src-tauri)
-    glib
-    libsoup_3 # TODO: Is this always needed?
-    webkitgtk_4_1
+    # freecad-addon test runner
+    python3Packages.pytest
   ];
 
   languages = {
     rust.enable = true;
-
-    javascript = {
-      enable = true;
-      bun.enable = true;
-    };
+    python.enable = true;
   };
 
   # See full reference at https://devenv.sh/reference/options/
