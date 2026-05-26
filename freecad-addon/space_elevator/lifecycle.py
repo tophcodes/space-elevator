@@ -1,12 +1,12 @@
 import FreeCAD
 
 from .event_pump import EventPump
-from . import libspnav, settings, axes, navigator
+from . import libspnav, settings, axes, navigator, buttons
 
-_state = {"active": False, "pump": None, "settings": None}
+_state = {"active": False, "pump": None, "settings": None, "bindings": None}
 
 
-def _make_handler(s):
+def _make_handler(s, b):
     def handle(ev):
         kind = ev[0]
         if kind == "motion":
@@ -17,8 +17,16 @@ def _make_handler(s):
             navigator.apply(transformed, period)
         elif kind == "button":
             _, bnum, pressed = ev
-            if pressed:
-                FreeCAD.Console.PrintMessage(f"Space Elevator: button {bnum}\n")
+            if not pressed:
+                return
+            cmd = b.get(bnum)
+            if cmd is None:
+                return
+            try:
+                import FreeCADGui as Gui
+                Gui.runCommand(cmd)
+            except Exception as exc:
+                FreeCAD.Console.PrintError(f"Space Elevator: command {cmd!r} failed: {exc}\n")
     return handle
 
 
@@ -26,13 +34,14 @@ def on_activate():
     if _state["active"]:
         return
     s = settings.from_freecad()
+    b = buttons.Bindings(FreeCAD.ParamGet)
     try:
-        pump = EventPump(_make_handler(s))
+        pump = EventPump(_make_handler(s, b))
     except libspnav.LibspnavMissing as e:
         FreeCAD.Console.PrintError(f"Space Elevator: {e}\n")
         return
     if pump.start():
-        _state.update(active=True, pump=pump, settings=s)
+        _state.update(active=True, pump=pump, settings=s, bindings=b)
 
 
 def on_deactivate():
@@ -43,3 +52,4 @@ def on_deactivate():
         pump.stop()
     _state["active"] = False
     _state["settings"] = None
+    _state["bindings"] = None
