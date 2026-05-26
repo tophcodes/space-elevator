@@ -1,24 +1,21 @@
 # Space Elevator
 
-Space elevator is a GUI-based configuration tool for 6 degrees-of-freedom (6dof) input devices, mostly known as space mice. It communicates with a separately running `spacenavd` daemon (a user-space 6dof device driver) via `libspnav`.
+Space Elevator is a FreeCAD addon for 6-degree-of-freedom (6DOF) input devices — primarily 3Dconnexion SpaceMice — backed by an optional Rust daemon that drives the LCD on the SpaceMouse Enterprise.
 
-There already exists a `spacenav-sys` and `spacenav` crate, however this looks to be unmaintained and is built against a very old version of libspnav. In order for `space-elevator` to communicate with the driver, this project includes new rust bindings for libspnav under the names `spnav`/`spnav-sys`.
+## Components
 
-For more info on the spacenav project (spacenavd and libspnav), visit their website: http://spacenav.sourceforge.net/
+- `spnav-sys/`, `spnav/` — Rust bindings for libspnav (used by the daemon; published as standalone crates).
+- `space-elevatord/` — Rust daemon. Owns the SpaceMouse Enterprise LCD. Exposes a Unix-socket JSON IPC.
+- `freecad-addon/` — Python FreeCAD workbench. Reads motion and button events from spacenavd via libspnav directly. Drives view navigation. Optionally pushes SVG-rendered images to the daemon for LCD output.
 
-## Implemented devices
+## Supported hardware
 
-Currently the following devices are supported:
-- [3D Connexion SpaceMouse Enterprise](https://3dconnexion.com/us/product/spacemouse-enterprise/)
+- 3Dconnexion SpaceMouse Enterprise (motion + buttons + LCD)
 
-## Application support
+Other SpaceMice work for motion and buttons; the LCD path is Enterprise-only.
 
-The following applications are supported:
-- [Onshape](https://onshape.com) via the _Space Elevator_ browser extension
+## Supported applications
 
-### Limitations
+- FreeCAD 1.0+
 
-> Since the 3Dconnexion driver is practically unmaintained for the last decade, and never really worked very well to begin with (which was what led to the development of spacenavd), and also since the magellan protocol introduces an unnecessary dependency to the X window system, and provides very rudimentary functionality, new applications are encouraged to use `spnav_open`.
-> -- [libspnav manual](https://spacenav.sourceforge.net/man_libspnav/#about-libspnav)
-
-For this reason, the spnav/spnav-sys wrappers are not currently built against libspnav with X11 support enabled and therefore also do not expose any X11-related functionality.
+The previous Onshape browser-extension target has been dropped from active scope.
