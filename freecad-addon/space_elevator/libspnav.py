@@ -66,13 +66,18 @@ class _Lib:
         lib.spnav_poll_event.argtypes = [ctypes.POINTER(_Event)]
         lib.spnav_poll_event.restype = ctypes.c_int
         self._lib = lib
+        self._opened = False
 
     def open(self):
+        if self._opened:
+            return
         if self._lib.spnav_open() == -1:
             raise SpacenavdUnavailable("spnav_open failed; is spacenavd running?")
+        self._opened = True
 
     def close(self):
         self._lib.spnav_close()
+        self._opened = False
 
     def fd(self):
         return self._lib.spnav_fd()
