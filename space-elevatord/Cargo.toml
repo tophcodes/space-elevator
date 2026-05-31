@@ -1,0 +1,21 @@
+[package]
+name = "space-elevatord"
+version = "0.1.0"
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Daemon for SpaceMouse Enterprise LCD output, paired with the space-elevator FreeCAD addon"
+
+[dependencies]
+spnav = { workspace = true, features = ["lcd", "svg"] }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+image = { version = "0.25", default-features = false, features = ["png", "jpeg"] }
+resvg = "0.45"
+tiny-skia = "0.11"
+usvg = "0.45"

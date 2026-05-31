@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>SpaceElevatorPreferences</class>
+ <widget class="QWidget" name="SpaceElevatorPreferences">
+  <property name="windowTitle"><string>Space Elevator</string></property>
+  <layout class="QVBoxLayout">
+    <item>
+      <widget class="QGroupBox" name="axisGroup">
+        <property name="title"><string>Axis scaling</string></property>
+        <layout class="QFormLayout">
+          <item row="0" column="0"><widget class="QLabel"><property name="text"><string>tx</string></property></widget></item>
+          <item row="0" column="1"><widget class="Gui::PrefDoubleSpinBox" name="tx"><property name="prefEntry" stdset="0"><cstring>axis_scale_tx</cstring></property><property name="prefPath" stdset="0"><cstring>Mod/SpaceElevator</cstring></property><property name="minimum"><double>-10.0</double></property><property name="maximum"><double>10.0</double></property><property name="singleStep"><double>0.1</double></property><property name="value"><double>1.0</double></property></widget></item>
+          <item row="1" column="0"><widget class="QLabel"><property name="text"><string>ty</string></property></widget></item>
+          <item row="1" column="1"><widget class="Gui::PrefDoubleSpinBox" name="ty"><property name="prefEntry" stdset="0"><cstring>axis_scale_ty</cstring></property><property name="prefPath" stdset="0"><cstring>Mod/SpaceElevator</cstring></property><property name="minimum"><double>-10.0</double></property><property name="maximum"><double>10.0</double></property><property name="singleStep"><double>0.1</double></property><property name="value"><double>1.0</double></property></widget></item>
+          <item row="2" column="0"><widget class="QLabel"><property name="text"><string>tz</string></property></widget></item>
+          <item row="2" column="1"><widget class="Gui::PrefDoubleSpinBox" name="tz"><property name="prefEntry" stdset="0"><cstring>axis_scale_tz</cstring></property><property name="prefPath" stdset="0"><cstring>Mod/SpaceElevator</cstring></property><property name="minimum"><double>-10.0</double></property><property name="maximum"><double>10.0</double></property><property name="singleStep"><double>0.1</double></property><property name="value"><double>1.0</double></property></widget></item>
+          <item row="3" column="0"><widget class="QLabel"><property name="text"><string>rx</string></property></widget></item>
+          <item row="3" column="1"><widget class="Gui::PrefDoubleSpinBox" name="rx"><property name="prefEntry" stdset="0"><cstring>axis_scale_rx</cstring></property><property name="prefPath" stdset="0"><cstring>Mod/SpaceElevator</cstring></property><property name="minimum"><double>-10.0</double></property><property name="maximum"><double>10.0</double></property><property name="singleStep"><double>0.1</double></property><property name="value"><double>1.0</double></property></widget></item>
+          <item row="4" column="0"><widget class="QLabel"><property name="text"><string>ry</string></property></widget></item>
+          <item row="4" column="1"><widget class="Gui::PrefDoubleSpinBox" name="ry"><property name="prefEntry" stdset="0"><cstring>axis_scale_ry</cstring></property><property name="prefPath" stdset="0"><cstring>Mod/SpaceElevator</cstring></property><property name="minimum"><double>-10.0</double></property><property name="maximum"><double>10.0</double></property><property name="singleStep"><double>0.1</double></property><property name="value"><double>1.0</double></property></widget></item>
+          <item row="5" column="0"><widget class="QLabel"><property name="text"><string>rz</string></property></widget></item>
+          <item row="5" column="1"><widget class="Gui::PrefDoubleSpinBox" name="rz"><property name="prefEntry" stdset="0"><cstring>axis_scale_rz</cstring></property><property name="prefPath" stdset="0"><cstring>Mod/SpaceElevator</cstring></property><property name="minimum"><double>-10.0</double></property><property name="maximum"><double>10.0</double></property><property name="singleStep"><double>0.1</double></property><property name="value"><double>1.0</double></property></widget></item>
+          <item row="6" column="0"><widget class="QLabel"><property name="text"><string>Deadzone</string></property></widget></item>
+          <item row="6" column="1"><widget class="Gui::PrefDoubleSpinBox" name="deadzone"><property name="prefEntry" stdset="0"><cstring>deadzone</cstring></property><property name="prefPath" stdset="0"><cstring>Mod/SpaceElevator</cstring></property><property name="minimum"><double>0.0</double></property><property name="maximum"><double>0.5</double></property><property name="singleStep"><double>0.01</double></property><property name="value"><double>0.02</double></property></widget></item>
+        </layout>
+      </widget>
+    </item>
+    <item>
+      <widget class="QGroupBox" name="lcdGroup">
+        <property name="title"><string>LCD</string></property>
+        <layout class="QFormLayout">
+          <item row="0" column="0"><widget class="QLabel"><property name="text"><string>Enable LCD output</string></property></widget></item>
+          <item row="0" column="1"><widget class="Gui::PrefCheckBox" name="lcd_enabled"><property name="prefEntry" stdset="0"><cstring>lcd_enabled</cstring></property><property name="prefPath" stdset="0"><cstring>Mod/SpaceElevator</cstring></property><property name="checked"><bool>true</bool></property></widget></item>
+          <item row="1" column="0"><widget class="QLabel"><property name="text"><string>Daemon socket (blank = default)</string></property></widget></item>
+          <item row="1" column="1"><widget class="Gui::PrefLineEdit" name="daemon_socket_path"><property name="prefEntry" stdset="0"><cstring>daemon_socket_path</cstring></property><property name="prefPath" stdset="0"><cstring>Mod/SpaceElevator</cstring></property></widget></item>
+        </layout>
+      </widget>
+    </item>
+  </layout>
+ </widget>
+</ui>
