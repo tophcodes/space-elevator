@@ -1,67 +1,78 @@
-// examples/lcd_test.rs
-
-use spnav::SpaceNav;
+use spnav::lcd::{Lcd, ScrollMode};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("SpaceMouse Enterprise LCD Test\n");
 
-    // Connect to LCD
-    println!("Connecting to SpaceMouse Enterprise...");
-    let mut device = SpaceNav::connect()?;
-    println!("Serial: {}", device.config().get_serial()?);
-    let mut lcd = device.lcd()?;
+    println!("Connecting...");
+    let mut lcd = Lcd::new()?;
     println!("✓ Connected!\n");
 
-    // Create a striped test pattern
-    println!("Generating striped test pattern...");
-    let bitmap = create_striped_pattern();
+    // Black/white are endian-invariant — confirm EFFECT_CUT works at all
+    println!("Test 1: Black (endian-invariant)...");
+    lcd.display_bitmap(&create_solid_color(0, 0, 0))?;
+    std::thread::sleep(std::time::Duration::from_secs(2));
 
-    println!("Sending to display...");
-    lcd.display_bitmap(&bitmap)?;
+    println!("Test 2: White (endian-invariant)...");
+    lcd.display_bitmap(&create_solid_color(255, 255, 255))?;
+    std::thread::sleep(std::time::Duration::from_secs(2));
 
-    println!("✓ Done! Check your SpaceMouse display.");
-    println!("\nPress Enter to clear and exit...");
+    println!("Test 3: Solid red (RGB check)...");
+    lcd.display_bitmap(&create_solid_color(255, 0, 0))?;
+    std::thread::sleep(std::time::Duration::from_secs(2));
 
-    let mut input = String::new();
-    std::io::stdin().read_line(&mut input)?;
+    println!("Test 4: Solid green (RGB check)...");
+    lcd.display_bitmap(&create_solid_color(0, 255, 0))?;
+    std::thread::sleep(std::time::Duration::from_secs(2));
 
+    println!("Test 5: Solid blue (RGB check)...");
+    lcd.display_bitmap(&create_solid_color(0, 0, 255))?;
+    std::thread::sleep(std::time::Duration::from_secs(2));
+
+    println!("Test 6: Rainbow stripes (no scroll)...");
+    let stripes = create_striped_pattern();
+    lcd.display_bitmap(&stripes)?;
+    std::thread::sleep(std::time::Duration::from_secs(3));
+
+    println!("Test 7: Rainbow stripes (scroll left)...");
+    lcd.display_bitmap_with_scroll(&stripes, ScrollMode::Left)?;
+    std::thread::sleep(std::time::Duration::from_secs(3));
+
+    println!("\nClearing...");
     lcd.clear()?;
-    println!("✓ Display cleared");
+
+    println!("✓ Done!");
 
     Ok(())
 }
 
-/// Create a simple striped test pattern (640x150 RGB)
+fn create_solid_color(r: u8, g: u8, b: u8) -> Vec<u8> {
+    vec![r, g, b].repeat(640 * 150)
+}
+
 fn create_striped_pattern() -> Vec<u8> {
     const WIDTH: usize = 640;
     const HEIGHT: usize = 150;
-    const STRIPE_WIDTH: usize = 80; // 8 stripes
+    const STRIPE_WIDTH: usize = 80;
 
-    let mut bitmap = Vec::with_capacity(WIDTH * HEIGHT * 3);
-
-    // Colors for each stripe (8 colors)
     let colors = [
-        (255, 0, 0),     // Red
-        (255, 165, 0),   // Orange
-        (255, 255, 0),   // Yellow
-        (0, 255, 0),     // Green
-        (0, 127, 255),   // Blue
-        (75, 0, 130),    // Indigo
-        (148, 0, 211),   // Violet
-        (255, 255, 255), // White
+        (255u8, 0u8, 0u8),
+        (255, 165, 0),
+        (255, 255, 0),
+        (0, 255, 0),
+        (0, 127, 255),
+        (75, 0, 130),
+        (148, 0, 211),
+        (255, 255, 255),
     ];
 
-    for _ in 0..HEIGHT {
+    let mut bitmap = Vec::with_capacity(WIDTH * HEIGHT * 3);
+    for _y in 0..HEIGHT {
         for x in 0..WIDTH {
-            // Determine which stripe we're in
-            let stripe_index = (x / STRIPE_WIDTH).min(7);
-            let (r, g, b) = colors[stripe_index];
-
+            let (r, g, b) = colors[(x / STRIPE_WIDTH).min(7)];
             bitmap.push(r);
             bitmap.push(g);
             bitmap.push(b);
         }
     }
-
     bitmap
 }

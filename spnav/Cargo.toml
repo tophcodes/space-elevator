@@ -1,6 +1,6 @@
 [package]
 name = "spnav"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 authors = ["Christopher Mühl <christopher@muehl.dev>"]
 description = "Safe Rust bindings for libspnav (SpaceNavigator 3D mouse support)"
@@ -16,11 +16,12 @@ thiserror = "1.0"
 serde = { version = "1.0", features = ["derive"], optional = true }
 flate2 = { version = "1.1", optional = true }
 hidapi = { version = "2.6", optional = true }
+miniz_oxide = { version = "0.8", optional = true }
 resvg = { version = "0.45", optional = true }
 rusb = { version = "0.9", optional = true }
 
 [features]
 default = ["svg"]
 serde = ["dep:serde"]
-lcd = ["dep:flate2", "dep:hidapi", "dep:rusb"]
+lcd = ["dep:flate2", "dep:hidapi", "dep:miniz_oxide", "dep:rusb"]
 svg = ["lcd", "dep:resvg"]
