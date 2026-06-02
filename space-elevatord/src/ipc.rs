@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use crate::lcd_template::LcdState;
 
 pub const PROTOCOL_VERSION: u32 = 1;
 
@@ -17,6 +18,7 @@ pub enum RequestPayload {
     LcdClear,
     LcdDisplayImage { path: String },
     LcdDisplaySvg { svg: String },
+    LcdSetState(LcdState),
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
@@ -73,5 +75,32 @@ mod tests {
         let r = Response::err(99, "boom");
         let s = serde_json::to_string(&r).unwrap();
         assert_eq!(s, r#"{"v":1,"id":99,"ok":false,"error":"boom"}"#);
+    }
+
+    #[test]
+    fn parses_lcd_set_state_request() {
+        let raw = r#"{"v":1,"id":9,"cmd":"lcd_set_state","theme":"signal","profile":"FreeCAD","mode":"Sketcher","left":[{"label":"Line","icon":"line","cat":"draw"}],"right":[]}"#;
+        let req: Request = serde_json::from_str(raw).unwrap();
+        assert_eq!(req.id, 9);
+        match req.payload {
+            RequestPayload::LcdSetState(s) => {
+                assert_eq!(s.profile, "FreeCAD");
+                assert_eq!(s.mode, "Sketcher");
+                assert_eq!(s.left.len(), 1);
+                assert_eq!(s.left[0].label, "Line");
+                assert_eq!(s.left[0].cat.as_deref(), Some("draw"));
+            }
+            _ => panic!("wrong variant"),
+        }
+    }
+
+    #[test]
+    fn lcd_set_state_defaults_theme_signal() {
+        let raw = r#"{"v":1,"id":1,"cmd":"lcd_set_state"}"#;
+        let req: Request = serde_json::from_str(raw).unwrap();
+        match req.payload {
+            RequestPayload::LcdSetState(s) => assert_eq!(s.theme, crate::lcd_template::Theme::Signal),
+            _ => panic!("wrong variant"),
+        }
     }
 }

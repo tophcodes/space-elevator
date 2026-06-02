@@ -84,6 +84,7 @@ async fn dispatch(req: Request, lcd: &LcdHandle) -> Response {
             },
             Err(e) => Response::err(req.id, e),
         },
+        RequestPayload::LcdSetState(_state) => Response::ok(req.id),
     }
 }
 
