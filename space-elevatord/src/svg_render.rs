@@ -1,11 +1,25 @@
 use resvg::tiny_skia;
-use usvg::Tree;
+use std::sync::{Arc, OnceLock};
+use usvg::{fontdb, Tree};
 
 pub const LCD_WIDTH: u32 = 640;
 pub const LCD_HEIGHT: u32 = 150;
 
+/// System font database, loaded once and shared across renders. Without it
+/// usvg silently drops all text. Loading scans font dirs, so do it lazily once.
+fn font_database() -> Arc<fontdb::Database> {
+    static DB: OnceLock<Arc<fontdb::Database>> = OnceLock::new();
+    DB.get_or_init(|| {
+        let mut db = fontdb::Database::new();
+        db.load_system_fonts();
+        Arc::new(db)
+    })
+    .clone()
+}
+
 pub fn render_to_rgb888(svg: &str) -> Result<Vec<u8>, String> {
-    let opt = usvg::Options::default();
+    let mut opt = usvg::Options::default();
+    opt.fontdb = font_database();
     let tree = Tree::from_str(svg, &opt).map_err(|e| format!("svg parse: {e}"))?;
 
     let mut pixmap = tiny_skia::Pixmap::new(LCD_WIDTH, LCD_HEIGHT)
