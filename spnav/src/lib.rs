@@ -5,8 +5,8 @@ mod event;
 pub mod lcd;
 
 use config::Config;
-use error::{Error, Result};
-use event::{ButtonEvent, Event, MotionEvent};
+pub use error::{Error, Result};
+pub use event::{ButtonEvent, Event, MotionEvent};
 #[cfg(feature = "lcd")]
 use lcd::{Lcd, LcdError};
 use spnav_sys as ffi;
