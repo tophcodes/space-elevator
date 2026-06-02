@@ -76,9 +76,6 @@ impl Lcd {
             })
             .ok_or(LcdError::DeviceNotFound)?;
 
-        // Reset device to clear any bad state from previous sessions
-        handle.reset().map_err(LcdError::UsbError)?;
-
         // Detach kernel driver and claim interface 0 (vendor/LCD interface)
         if handle.kernel_driver_active(0).unwrap_or(false) {
             handle.detach_kernel_driver(0).map_err(LcdError::UsbError)?;
