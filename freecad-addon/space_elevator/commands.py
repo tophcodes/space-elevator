@@ -3,7 +3,8 @@
 label  = command's menuText (with & accelerators stripped)
 icon   = the command icon as an SVG string, or a data: PNG URI, or None
 
-FreeCAD/Qt access is injected so this unit-tests without FreeCAD.
+FreeCAD/Qt access is injected so this unit-tests without FreeCAD. Targets
+FreeCAD 1.1+ (PySide6); no PySide2 fallback.
 """
 
 SVG_RESOURCE = ":/icons/%s.svg"
