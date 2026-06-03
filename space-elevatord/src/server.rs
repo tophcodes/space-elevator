@@ -84,7 +84,16 @@ async fn dispatch(req: Request, lcd: &LcdHandle) -> Response {
             },
             Err(e) => Response::err(req.id, e),
         },
-        RequestPayload::LcdSetState(_state) => Response::ok(req.id),
+        RequestPayload::LcdSetState(state) => {
+            let svg = crate::lcd_template::render(&state);
+            match crate::svg_render::render_to_rgb888(&svg) {
+                Ok(rgb) => match lcd.display_rgb888(&rgb).await {
+                    Ok(()) => Response::ok(req.id),
+                    Err(e) => Response::err(req.id, e.to_string()),
+                },
+                Err(e) => Response::err(req.id, e),
+            }
+        }
     }
 }
 
