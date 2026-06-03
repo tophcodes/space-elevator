@@ -77,3 +77,10 @@ class LcdClient:
         r = self._request({"cmd": "lcd_display_svg", "svg": svg})
         if not r.get("ok"):
             raise ProtocolError(r.get("error", "lcd_display_svg failed"))
+
+    def set_state(self, state):
+        payload = {"cmd": "lcd_set_state"}
+        payload.update(state)
+        r = self._request(payload)
+        if not r.get("ok"):
+            raise ProtocolError(r.get("error", "lcd_set_state failed"))

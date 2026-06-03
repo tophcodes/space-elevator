@@ -359,6 +359,17 @@ fn esc(s: &str) -> String {
     s.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;")
 }
 
+/// Truncate a label so it fits one line in a tile (~13 chars at the label
+/// font/size), adding an ellipsis. FreeCAD command names are often verbose.
+fn fit_label(s: &str, max: usize) -> String {
+    let chars: Vec<char> = s.chars().collect();
+    if chars.len() <= max {
+        return s.to_string();
+    }
+    let cut: String = chars[..max.saturating_sub(1)].iter().collect();
+    format!("{}…", cut.trim_end())
+}
+
 fn f1(n: f64) -> String {
     format!("{:.1}", n)
 }
@@ -403,8 +414,12 @@ fn render_icon(icon: Option<&str>, o: &IconOpts, s: f64, cxp: f64, icon_cy: f64)
 }
 
 fn render_tile(it: &Tile, x: f64, y: f64, w: f64, h: f64, t: &ThemeDef) -> String {
-    let cat = cat_color(t.light_cat, it.cat.as_deref().unwrap_or("")).unwrap_or(t.label);
     let mut out = String::new();
+    // Fully-empty tile (unbound button): render nothing.
+    if it.label.is_empty() && it.icon.is_none() && !it.active {
+        return out;
+    }
+    let cat = cat_color(t.light_cat, it.cat.as_deref().unwrap_or("")).unwrap_or(t.label);
     let pad = 4.0;
     let in_x = x + pad;
     let in_y = y + 5.0;
@@ -457,7 +472,7 @@ fn render_tile(it: &Tile, x: f64, y: f64, w: f64, h: f64, t: &ThemeDef) -> Strin
     let lbl_color = if it.active { t.active_fg } else { t.label };
     out.push_str(&format!(
         "<text x=\"{}\" y=\"{}\" text-anchor=\"middle\" font-family=\"'Source Sans 3','DejaVu Sans','Segoe UI',sans-serif\" font-size=\"{}\" font-weight=\"{}\" letter-spacing=\"0.1\" fill=\"{}\">{}</text>",
-        f1(cxp), f1(y + h * 0.80), num(t.label_size), t.label_weight, lbl_color, esc(&it.label)
+        f1(cxp), f1(y + h * 0.80), num(t.label_size), t.label_weight, lbl_color, esc(&fit_label(&it.label, 13))
     ));
 
     out
@@ -611,6 +626,47 @@ mod tests {
         st.left[0].icon = Some("data:image/png;base64,AAAA".into());
         let svg = render(&st);
         assert!(svg.contains("<image href=\"data:image/png;base64,AAAA\""));
+    }
+
+    #[test]
+    fn long_label_truncated_with_ellipsis() {
+        let st = LcdState {
+            left: vec![Tile { label: "Align vertexes horizontally".into(), icon: None, cat: None, active: false }],
+            ..LcdState::default()
+        };
+        let svg = render(&st);
+        assert!(svg.contains('…'));
+        assert!(!svg.contains("Align vertexes horizontally"));
+    }
+
+    #[test]
+    fn short_label_unchanged() {
+        let st = LcdState {
+            left: vec![Tile { label: "Line".into(), icon: None, cat: None, active: false }],
+            ..LcdState::default()
+        };
+        assert!(render(&st).contains(">Line<"));
+    }
+
+    #[test]
+    fn empty_tile_renders_nothing() {
+        // Use Signal — the only theme with tile_fill != "none", so the bg rect is observable.
+        let blank = LcdState {
+            theme: Theme::Signal,
+            profile: "FreeCAD".into(),
+            mode: "Part".into(),
+            left: vec![Tile::default()], // label "", icon None, cat None, active false
+            right: vec![],
+        };
+        let svg = render(&blank);
+        assert!(!svg.contains("#15171C"), "blank tile must not draw a tile background");
+
+        // sanity: a real tile DOES draw the bg
+        let filled = LcdState {
+            left: vec![Tile { label: "Line".into(), icon: Some("line".into()), cat: Some("draw".into()), active: false }],
+            ..LcdState::default()
+        };
+        assert!(render(&filled).contains("#15171C"));
     }
 
     #[test]
