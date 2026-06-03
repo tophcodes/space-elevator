@@ -62,19 +62,23 @@ impl Lcd {
     pub fn new() -> Result<Self, LcdError> {
         let context = Context::new().map_err(LcdError::UsbError)?;
 
-        let handle = context
+        // Locate the device first, then open it separately: opening can fail
+        // for reasons other than absence (most commonly a permissions error on
+        // the USB node), and folding open() into the search would report every
+        // such failure as DeviceNotFound.
+        let device = context
             .devices()
             .map_err(LcdError::UsbError)?
             .iter()
-            .find_map(|dev| {
-                let desc = dev.device_descriptor().ok()?;
-                if desc.vendor_id() == USB_VENDOR_ID && desc.product_id() == USB_PRODUCT_ID {
-                    dev.open().ok()
-                } else {
-                    None
-                }
+            .find(|dev| {
+                dev.device_descriptor()
+                    .map(|desc| {
+                        desc.vendor_id() == USB_VENDOR_ID && desc.product_id() == USB_PRODUCT_ID
+                    })
+                    .unwrap_or(false)
             })
             .ok_or(LcdError::DeviceNotFound)?;
+        let handle = device.open().map_err(LcdError::UsbError)?;
 
         // Detach kernel driver and claim interface 0 (vendor/LCD interface)
         if handle.kernel_driver_active(0).unwrap_or(false) {
