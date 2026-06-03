@@ -46,8 +46,7 @@ def test_missing_socket_raises():
 
 
 def _capturing_server(socket_path, response):
-    """Like _fake_server but captures received messages for inspection."""
-    import threading as _threading
+    """Single-request variant of _fake_server that captures the received message."""
     captured = {}
     srv = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     srv.bind(socket_path)
@@ -56,15 +55,18 @@ def _capturing_server(socket_path, response):
     def run():
         conn, _ = srv.accept()
         buf = b""
-        chunk = conn.recv(4096)
-        buf += chunk
+        while b"\n" not in buf:
+            chunk = conn.recv(4096)
+            if not chunk:
+                return
+            buf += chunk
         line, _ = buf.split(b"\n", 1)
         captured["msg"] = json.loads(line.decode())
         conn.sendall((json.dumps(response) + "\n").encode())
         conn.close()
         srv.close()
 
-    _threading.Thread(target=run, daemon=True).start()
+    threading.Thread(target=run, daemon=True).start()
     return captured
 
 
@@ -79,4 +81,5 @@ def test_set_state_sends_cmd_and_merges_payload(tmp_path):
     assert msg["cmd"] == "lcd_set_state"
     assert msg["profile"] == "FreeCAD"
     assert msg["mode"] == "Part"
-    assert msg["v"] == 1 and "id" in msg
+    assert msg["v"] == 1
+    assert "id" in msg
