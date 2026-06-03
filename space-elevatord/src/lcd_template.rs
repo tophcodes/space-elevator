@@ -243,6 +243,284 @@ pub fn glyph(name: &str, o: &IconOpts) -> String {
     }
 }
 
+// --- palettes + themes (port of CAT_DARK/CAT_LIGHT + THEMES) ---------------
+
+const W: f64 = 640.0;
+const H: f64 = 150.0;
+
+/// Resolved theme palette. Mirrors the JS `THEMES[name]` objects.
+struct ThemeDef {
+    bg: &'static str,
+    /// false => CAT_DARK, true => CAT_LIGHT
+    light_cat: bool,
+    tile_fill: &'static str,
+    tile_radius: i32,
+    label: &'static str,
+    label_weight: i32,
+    label_size: f64,
+    icon_sw: f64,
+    /// Translucent category fill behind strokes (alpha byte), or None.
+    icon_fill_alpha: Option<&'static str>,
+    /// Fallback icon fill when no alpha (JS `icon.fill || 'none'`).
+    icon_fill: &'static str,
+    /// Two-tone: grey body (icon_base_color) + category accent.
+    icon_mono: bool,
+    icon_base_color: Option<&'static str>,
+    gutter_line: &'static str,
+    profile: &'static str,
+    mode: &'static str,
+    active_fg: &'static str,
+    active_radius: i32,
+}
+
+/// Category colour for a key, or None for unknown/neutral (caller falls back
+/// to the theme label colour, as JS `t.cat[it.cat] || t.label`).
+fn cat_color(light: bool, key: &str) -> Option<&'static str> {
+    let (draw, modify, constrain, view, cut) = if light {
+        ("#1F6FE0", "#B5760C", "#0E9152", "#7A47CF", "#D7453F")
+    } else {
+        ("#4DA3FF", "#FFB454", "#46D08A", "#B98CFF", "#FF6B6B")
+    };
+    Some(match key {
+        "draw" => draw,
+        "modify" => modify,
+        "constrain" => constrain,
+        "view" => view,
+        "cut" => cut,
+        _ => return None,
+    })
+}
+
+fn theme_def(theme: Theme) -> ThemeDef {
+    match theme {
+        Theme::Console => ThemeDef {
+            bg: "#0C0D10",
+            light_cat: false,
+            tile_fill: "none",
+            tile_radius: 0,
+            label: "#C7CBD3",
+            label_weight: 500,
+            label_size: 13.5,
+            icon_sw: 1.7,
+            icon_fill_alpha: None,
+            icon_fill: "none",
+            icon_mono: false,
+            icon_base_color: None,
+            gutter_line: "#22252D",
+            profile: "#5E646F",
+            mode: "#AEB4BF",
+            active_fg: "#0C0D10",
+            active_radius: 9,
+        },
+        Theme::Signal => ThemeDef {
+            bg: "#0A0B0D",
+            light_cat: false,
+            tile_fill: "#15171C",
+            tile_radius: 9,
+            label: "#E6E9EF",
+            label_weight: 600,
+            label_size: 13.5,
+            icon_sw: 2.3,
+            icon_fill_alpha: Some("33"),
+            icon_fill: "none",
+            icon_mono: false,
+            icon_base_color: None,
+            gutter_line: "#20242C",
+            profile: "#6A7180",
+            mode: "#D6DBE4",
+            active_fg: "#0A0B0D",
+            active_radius: 9,
+        },
+        Theme::Paper => ThemeDef {
+            bg: "#ECEAE4",
+            light_cat: true,
+            tile_fill: "none",
+            tile_radius: 0,
+            label: "#37332C",
+            label_weight: 600,
+            label_size: 13.5,
+            icon_sw: 1.8,
+            icon_fill_alpha: Some("1f"),
+            icon_fill: "none",
+            icon_mono: true,
+            icon_base_color: Some("#615C52"),
+            gutter_line: "#CFCAC0",
+            profile: "#7A746A",
+            mode: "#37332C",
+            active_fg: "#FCFBF8",
+            active_radius: 9,
+        },
+    }
+}
+
+// --- renderer (port of renderTile/cluster/renderLCD) ----------------------
+
+fn esc(s: &str) -> String {
+    s.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;")
+}
+
+fn f1(n: f64) -> String {
+    format!("{:.1}", n)
+}
+
+/// Whether a tile icon string is client-supplied content (inline SVG or a
+/// `data:` URI) rather than a built-in glyph name.
+fn is_client_icon(s: &str) -> bool {
+    let t = s.trim_start();
+    t.starts_with('<') || t.starts_with("data:")
+}
+
+fn render_icon(icon: Option<&str>, o: &IconOpts, s: f64, cxp: f64, icon_cy: f64) -> String {
+    let tx = cxp - 12.0 * s;
+    let ty = icon_cy - 12.0 * s;
+    match icon {
+        Some(c) if is_client_icon(c) => {
+            let t = c.trim_start();
+            if t.starts_with("data:") {
+                // raster icon -> <image> scaled into the 24x24 icon box
+                format!(
+                    "<g transform=\"translate({:.2},{:.2}) scale({:.3})\"><image href=\"{}\" x=\"0\" y=\"0\" width=\"24\" height=\"24\"/></g>",
+                    tx, ty, s, esc(c)
+                )
+            } else {
+                // inline SVG content (client supplies its own colours)
+                format!(
+                    "<g transform=\"translate({:.2},{:.2}) scale({:.3})\" stroke-linecap=\"round\" stroke-linejoin=\"round\">{}</g>",
+                    tx, ty, s, c
+                )
+            }
+        }
+        other => {
+            // built-in glyph by name; None => generic fallback (glyph() maps
+            // unknown names to "point" too)
+            let g = glyph(other.unwrap_or("point"), o);
+            format!(
+                "<g transform=\"translate({:.2},{:.2}) scale({:.3})\" stroke-linecap=\"round\" stroke-linejoin=\"round\">{}</g>",
+                tx, ty, s, g
+            )
+        }
+    }
+}
+
+fn render_tile(it: &Tile, x: f64, y: f64, w: f64, h: f64, t: &ThemeDef) -> String {
+    let cat = cat_color(t.light_cat, it.cat.as_deref().unwrap_or("")).unwrap_or(t.label);
+    let mut out = String::new();
+    let pad = 4.0;
+    let in_x = x + pad;
+    let in_y = y + 5.0;
+    let in_w = w - pad * 2.0;
+    let in_h = h - 10.0;
+
+    // tile background or active highlight
+    if it.active {
+        out.push_str(&format!(
+            "<rect x=\"{}\" y=\"{}\" width=\"{}\" height=\"{}\" rx=\"{}\" fill=\"{}\"/>",
+            f1(in_x), f1(in_y), f1(in_w), f1(in_h), t.active_radius, cat
+        ));
+    } else if t.tile_fill != "none" {
+        out.push_str(&format!(
+            "<rect x=\"{}\" y=\"{}\" width=\"{}\" height=\"{}\" rx=\"{}\" fill=\"{}\"/>",
+            f1(in_x), f1(in_y), f1(in_w), f1(in_h), t.tile_radius, t.tile_fill
+        ));
+    }
+
+    // icon colours by theme/state
+    let (c1, c2, fill): (String, String, String);
+    if it.active {
+        let fg = t.active_fg;
+        c1 = fg.to_string();
+        c2 = fg.to_string();
+        fill = format!("{}30", fg);
+    } else if t.icon_mono {
+        c1 = t.icon_base_color.unwrap_or(t.label).to_string();
+        c2 = cat.to_string();
+        fill = match t.icon_fill_alpha {
+            Some(a) => format!("{}{}", cat, a),
+            None => t.icon_fill.to_string(),
+        };
+    } else {
+        c1 = cat.to_string();
+        c2 = cat.to_string();
+        fill = match t.icon_fill_alpha {
+            Some(a) => format!("{}{}", cat, a),
+            None => t.icon_fill.to_string(),
+        };
+    }
+
+    let s = 27.0 / 24.0;
+    let cxp = x + w / 2.0;
+    let icon_cy = y + h * 0.36;
+    let o = IconOpts { c1: &c1, c2: &c2, sw: t.icon_sw, fill: &fill };
+    out.push_str(&render_icon(it.icon.as_deref(), &o, s, cxp, icon_cy));
+
+    // label
+    let lbl_color = if it.active { t.active_fg } else { t.label };
+    out.push_str(&format!(
+        "<text x=\"{}\" y=\"{}\" text-anchor=\"middle\" font-family=\"'Source Sans 3','DejaVu Sans','Segoe UI',sans-serif\" font-size=\"{}\" font-weight=\"{}\" letter-spacing=\"0.1\" fill=\"{}\">{}</text>",
+        f1(cxp), f1(y + h * 0.80), num(t.label_size), t.label_weight, lbl_color, esc(&it.label)
+    ));
+
+    out
+}
+
+fn cluster(items: &[Tile], x0: f64, x1: f64, t: &ThemeDef) -> String {
+    let top = 6.0;
+    let bottom = H - 6.0;
+    let col_w = (x1 - x0) / 3.0;
+    let row_h = (bottom - top) / 2.0;
+    let mut out = String::new();
+    for (i, it) in items.iter().take(6).enumerate() {
+        let col = (i % 3) as f64;
+        let row = (i / 3) as f64;
+        out.push_str(&render_tile(it, x0 + col * col_w, top + row * row_h, col_w, row_h, t));
+    }
+    out
+}
+
+/// Render a full 640x150 LCD SVG from client state. Port of `renderLCD`.
+pub fn render(state: &LcdState) -> String {
+    let t = theme_def(state.theme);
+    let gutter_w = 40.0;
+    let cx = W / 2.0;
+    let g_x0 = cx - gutter_w / 2.0;
+    let g_x1 = cx + gutter_w / 2.0;
+    let left_x0 = 6.0;
+    let left_x1 = g_x0;
+    let right_x0 = g_x1;
+    let right_x1 = W - 6.0;
+
+    let mut svg = String::new();
+    svg.push_str(&format!(
+        "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"{}\" height=\"{}\" viewBox=\"0 0 {} {}\" shape-rendering=\"geometricPrecision\">",
+        num(W), num(H), num(W), num(H)
+    ));
+    svg.push_str(&format!("<rect width=\"{}\" height=\"{}\" fill=\"{}\"/>", num(W), num(H), t.bg));
+
+    svg.push_str(&cluster(&state.left, left_x0, left_x1, &t));
+    svg.push_str(&cluster(&state.right, right_x0, right_x1, &t));
+
+    // centre gutter: hairline + rotated profile / mode label
+    svg.push_str(&format!(
+        "<line x1=\"{}\" y1=\"20\" x2=\"{}\" y2=\"{}\" stroke=\"{}\" stroke-width=\"1\"/>",
+        num(cx), num(cx), num(H - 20.0), t.gutter_line
+    ));
+    svg.push_str(&format!(
+        "<g transform=\"translate({},{}) rotate(-90)\" font-family=\"'Source Sans 3','DejaVu Sans',sans-serif\" text-anchor=\"middle\">",
+        num(cx), num(H / 2.0)
+    ));
+    svg.push_str(&format!(
+        "<text x=\"0\" y=\"-4.5\" font-size=\"9.5\" font-weight=\"600\" letter-spacing=\"2\" fill=\"{}\">{}</text>",
+        t.profile, esc(&state.profile.to_uppercase())
+    ));
+    svg.push_str(&format!(
+        "<text x=\"0\" y=\"8.5\" font-size=\"13\" font-weight=\"700\" letter-spacing=\"0.5\" fill=\"{}\">{}</text>",
+        t.mode, esc(&state.mode)
+    ));
+    svg.push_str("</g>");
+    svg.push_str("</svg>");
+    svg
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -274,5 +552,76 @@ mod tests {
     fn glyph_unknown_falls_back_to_point() {
         let o = IconOpts { c1: "#A", c2: "#B", sw: 1.7, fill: "none" };
         assert_eq!(glyph("does-not-exist", &o), glyph("point", &o));
+    }
+
+    fn demo_state() -> LcdState {
+        LcdState {
+            theme: Theme::Signal,
+            profile: "FreeCAD".into(),
+            mode: "Sketch".into(),
+            left: vec![
+                Tile { label: "Line".into(), icon: Some("line".into()), cat: Some("draw".into()), active: false },
+                Tile { label: "Construction".into(), icon: Some("construction".into()), cat: Some("modify".into()), active: true },
+            ],
+            right: vec![
+                Tile { label: "Coincident".into(), icon: Some("coincident".into()), cat: Some("constrain".into()), active: false },
+            ],
+        }
+    }
+
+    #[test]
+    fn render_emits_canvas_and_gutter() {
+        let svg = render(&demo_state());
+        assert!(svg.starts_with("<svg"));
+        assert!(svg.ends_with("</svg>"));
+        assert!(svg.contains("viewBox=\"0 0 640 150\""));
+        // Signal bg + gutter text
+        assert!(svg.contains("fill=\"#0A0B0D\""));
+        assert!(svg.contains(">FREECAD<"));
+        assert!(svg.contains(">Sketch<"));
+    }
+
+    #[test]
+    fn render_active_tile_uses_category_fill() {
+        let svg = render(&demo_state());
+        // active modify tile -> rounded rect filled with modify colour
+        assert!(svg.contains("rx=\"9\" fill=\"#FFB454\""));
+    }
+
+    #[test]
+    fn theme_paper_uses_light_palette() {
+        let mut st = demo_state();
+        st.theme = Theme::Paper;
+        let svg = render(&st);
+        assert!(svg.contains("fill=\"#ECEAE4\"")); // paper bg
+        assert!(svg.contains("#1F6FE0")); // light draw colour
+    }
+
+    #[test]
+    fn client_svg_icon_inlined_verbatim() {
+        let mut st = demo_state();
+        st.left[0].icon = Some("<path d=\"M0 0\" stroke=\"red\"/>".into());
+        let svg = render(&st);
+        assert!(svg.contains("<path d=\"M0 0\" stroke=\"red\"/>"));
+    }
+
+    #[test]
+    fn client_data_uri_icon_becomes_image() {
+        let mut st = demo_state();
+        st.left[0].icon = Some("data:image/png;base64,AAAA".into());
+        let svg = render(&st);
+        assert!(svg.contains("<image href=\"data:image/png;base64,AAAA\""));
+    }
+
+    #[test]
+    fn cluster_caps_at_six_tiles() {
+        let mut st = demo_state();
+        st.left = (0..9)
+            .map(|i| Tile { label: format!("T{i}"), icon: Some("point".into()), cat: None, active: false })
+            .collect();
+        let svg = render(&st);
+        // only first 6 labels rendered
+        assert!(svg.contains(">T5<"));
+        assert!(!svg.contains(">T6<"));
     }
 }
