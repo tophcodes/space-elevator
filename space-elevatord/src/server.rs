@@ -29,6 +29,14 @@ pub async fn run() -> std::io::Result<()> {
         std::fs::create_dir_all(parent)?;
     }
     let listener = UnixListener::bind(&path)?;
+    // The daemon needs root for USB, but the socket lives in the invoking
+    // user's XDG_RUNTIME_DIR. Hand it back to that user so an unprivileged
+    // client (the FreeCAD plugin) can connect.
+    if let (Ok(uid), Ok(gid)) = (std::env::var("SUDO_UID"), std::env::var("SUDO_GID")) {
+        if let (Ok(uid), Ok(gid)) = (uid.parse::<u32>(), gid.parse::<u32>()) {
+            let _ = std::os::unix::fs::chown(&path, Some(uid), Some(gid));
+        }
+    }
     info!(?path, "space-elevatord listening");
 
     let lcd = LcdHandle::new();
@@ -84,6 +92,16 @@ async fn dispatch(req: Request, lcd: &LcdHandle) -> Response {
             },
             Err(e) => Response::err(req.id, e),
         },
+        RequestPayload::LcdSetState(state) => {
+            let svg = crate::lcd_template::render(&state);
+            match crate::svg_render::render_to_rgb888(&svg) {
+                Ok(rgb) => match lcd.display_rgb888(&rgb).await {
+                    Ok(()) => Response::ok(req.id),
+                    Err(e) => Response::err(req.id, e.to_string()),
+                },
+                Err(e) => Response::err(req.id, e),
+            }
+        }
     }
 }
 
