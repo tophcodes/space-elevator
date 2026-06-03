@@ -13,7 +13,7 @@ PROFILE = "FreeCAD"
 
 def _default_active_wb():
     import FreeCADGui
-    return FreeCADGui.activeWorkbench().name()
+    return FreeCADGui.activeWorkbench().MenuText
 
 
 def _blank_tile():
