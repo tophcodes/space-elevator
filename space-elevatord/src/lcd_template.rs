@@ -359,6 +359,17 @@ fn esc(s: &str) -> String {
     s.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;")
 }
 
+/// Truncate a label so it fits one line in a tile (~13 chars at the label
+/// font/size), adding an ellipsis. FreeCAD command names are often verbose.
+fn fit_label(s: &str, max: usize) -> String {
+    let chars: Vec<char> = s.chars().collect();
+    if chars.len() <= max {
+        return s.to_string();
+    }
+    let cut: String = chars[..max.saturating_sub(1)].iter().collect();
+    format!("{}…", cut.trim_end())
+}
+
 fn f1(n: f64) -> String {
     format!("{:.1}", n)
 }
@@ -461,7 +472,7 @@ fn render_tile(it: &Tile, x: f64, y: f64, w: f64, h: f64, t: &ThemeDef) -> Strin
     let lbl_color = if it.active { t.active_fg } else { t.label };
     out.push_str(&format!(
         "<text x=\"{}\" y=\"{}\" text-anchor=\"middle\" font-family=\"'Source Sans 3','DejaVu Sans','Segoe UI',sans-serif\" font-size=\"{}\" font-weight=\"{}\" letter-spacing=\"0.1\" fill=\"{}\">{}</text>",
-        f1(cxp), f1(y + h * 0.80), num(t.label_size), t.label_weight, lbl_color, esc(&it.label)
+        f1(cxp), f1(y + h * 0.80), num(t.label_size), t.label_weight, lbl_color, esc(&fit_label(&it.label, 13))
     ));
 
     out
@@ -615,6 +626,26 @@ mod tests {
         st.left[0].icon = Some("data:image/png;base64,AAAA".into());
         let svg = render(&st);
         assert!(svg.contains("<image href=\"data:image/png;base64,AAAA\""));
+    }
+
+    #[test]
+    fn long_label_truncated_with_ellipsis() {
+        let st = LcdState {
+            left: vec![Tile { label: "Align vertexes horizontally".into(), icon: None, cat: None, active: false }],
+            ..LcdState::default()
+        };
+        let svg = render(&st);
+        assert!(svg.contains('…'));
+        assert!(!svg.contains("Align vertexes horizontally"));
+    }
+
+    #[test]
+    fn short_label_unchanged() {
+        let st = LcdState {
+            left: vec![Tile { label: "Line".into(), icon: None, cat: None, active: false }],
+            ..LcdState::default()
+        };
+        assert!(render(&st).contains(">Line<"));
     }
 
     #[test]
